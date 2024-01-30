@@ -5,6 +5,7 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+options(scipen = 999,digits=5)
 ```
 
 In the last activity, you might have noticed that I made this Rmd output a document with a type of `github_document` (in the YAML header underneath the title - on line 3) instead of a HTML, Word, or PDF document.
@@ -31,7 +32,11 @@ Remember that [Emil Hvitfeldt](https://www.emilhvitfeldt.com/) (of Posit) has pu
 - Run the `load-packages` code chunk or **knit** <img src="../README-img/knit-icon.png" alt="knit" width = "20"/> icon your Rmd document to verify that no errors occur.
 
 ```{r load-packages}
-
+library(tidyverse)
+library(tidymodels)
+library(ggplot2)
+library(GGally)
+library(plotly)
 ```
 
 Since we will be looking at many relationships graphically, it will be nice to not have to code each of these individually.
@@ -57,6 +62,12 @@ Recall that data we are working with is from the OpenIntro site (its "about" pag
 We can access the raw data from their tab-delimited text file link: https://www.openintro.org/data/tab-delimited/hfi.txt.
 
 Create a new R code chunk below that is titled `load-data` and reads in the above linked TSV (tab-separated values) file by doing the following:
+```{r, load-data}
+#hfi<-readr::read_tsv('https://www.openintro.org/data/csv/hfi.csv')
+hfi<-read.csv('~/Desktop/CIS635W23/STA 631 W24/activity3/hfi.csv')
+hfi_2016<-hfi%>%
+  filter(`year` == 2016) 
+```
 
 - Rather than downloading this file, uploading to RStudio, then reading it in, explore how to load this file directly from the provided URL with `readr::read_tsv` (`{readr}` is part of `{tidyverse}`).
 - Assign this data set into a data frame named `hfi` (short for "Human Freedom Index").
@@ -99,9 +110,9 @@ Now, we will obtain graphical and numerical summaries to describe the pairwise r
 - Replace `explanatory` in the `select` line with the variable you identified above
 - Run your code chunk or knit your document.
   
-```{verbatim pairs-plot}
+```{r, pairs-plot,warning=FALSE}
 hfi_2016 %>% 
-  select(pf_score, pf_expression_control, explanatory) %>% 
+  select(pf_score, pf_expression_control, pf_rol_civil) %>% 
   ggpairs()
 ```
 
@@ -136,7 +147,7 @@ $$
 - Replace `explanatory`, similarly to what you did in your `pairs-plot` R code chunk.
 - Run your code chunk or knit your document.
   
-```{verbatim mlr-model}
+```{r, mlr-model}
 #fit the mlr model
 lm_spec <- linear_reg() %>%
   set_mode("regression") %>%
@@ -145,7 +156,7 @@ lm_spec <- linear_reg() %>%
 lm_spec
 
 mlr_mod <- lm_spec %>% 
-fit(pf_score ~ pf_expression_control + explanatory, data = hfi_2016)
+fit(pf_score ~ pf_expression_control + pf_rol_civil, data = hfi_2016)
 
 # model output
 tidy(mlr_mod)
@@ -173,6 +184,18 @@ Do some internet sleuthing to minimally produce a 3-D scatterplot (you do not ne
 Ideally, this would be something that plays nicely with (looks similar to) `{ggplot2}`.
 
 - Create a new R code chunk, with a descriptive name, and add your code to create this plot.
+https://plotly.com/r/3d-scatter-plots/
+```{r}
+
+fig <- plot_ly(hfi_2016, x = ~pf_score, y = ~pf_expression_control, z = ~pf_rol_civil, color = ~pf_score, colors = c('#4AC6B7', '#C61951'))
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = 'Personal Freedom Score'),
+                     yaxis = list(title = 'Expression Cotrol'),
+                     zaxis = list(title = 'Civil Control')))
+
+fig
+
+```
 
 After doing this, respond to the following prompt:
 
@@ -207,7 +230,7 @@ Fortunately, we can create our own.
 - In the code chunk below titled `binary-pred`, replace "verbatim" with "r" just before the code chunk title.
 - Run your code chunk or knit your document.
   
-```{verbatim binary-pred}
+```{r, binary-pred}
 hfi_2016 <- hfi_2016 %>%
   mutate(west_atlantic = if_else(
     region %in% c("North America", "Latin America & the Caribbean"),
@@ -222,7 +245,7 @@ hfi_2016 <- hfi_2016 %>%
 - In the code chunk below titled `qual-mlr`, replace "verbatim" with "r" just before the code chunk title.
 - Run your code chunk or knit your document.
 
-```{verbatim qual-mlr}
+```{r, qual-mlr}
 # review any visual patterns
 hfi_2016 %>% 
   select(pf_score, west_atlantic, pf_expression_control) %>% 
@@ -328,7 +351,7 @@ $$
 - In the code chunk below titled `int-mlr`, replace "verbatim" with "r" just before the code chunk title.
 - Run your code chunk or knit your document.
 
-```{verbatim int-mlr}
+```{r, int-mlr}
 # review any visual patterns
 hfi_2016 %>% 
   select(pf_score, west_atlantic, pf_expression_control) %>% 
